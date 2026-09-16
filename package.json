@@ -1,0 +1,18 @@
+{
+  "name": "bot-jake-v2",
+  "version": "1.0.0",
+  "description": "Bot de Memes e Musicas para WhatsApp e Discord",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "whatsapp-web.js": "^1.26.0",
+    "qrcode-terminal": "^0.12.0",
+    "discord.js": "^14.16.3",
+    "@discordjs/voice": "^0.17.0",
+    "@discordjs/opus": "^0.9.0",
+    "play-dl": "^1.9.7",
+    "ffmpeg-static": "^5.2.0"
+  }
+}
