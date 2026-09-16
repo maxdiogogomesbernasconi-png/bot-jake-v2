@@ -3,12 +3,11 @@ const { Client: DiscordClient, GatewayIntentBits } = require('discord.js');
 const { joinVoiceChannel, createAudioPlayer, createAudioResource, AudioPlayerStatus } = require('@discordjs/voice');
 const qrcode = require('qrcode-terminal');
 const play = require('play-dl');
-const http = require('http'); // Necessário para manter o Render/Koyeb ligados de graça
+const http = require('http');
 
-// Banco de dados simulado na memória global (Amanhã conectamos seu Airtable aqui!)
 let bancoDeMemes = {};
 
-// Mantém um servidor web falso rodando pro Render não desligar o bot gratuito
+// Mantém um servidor web falso rodando pro Render não derrubar o plano gratuito
 http.createServer((req, res) => {
     res.write("Bot Online 24h!");
     res.end();
@@ -26,7 +25,7 @@ async function buscarConteudoInternet(termoBusca, tipo) {
     if (!resultados || resultados.length === 0) throw new Error("Conteúdo não encontrado.");
 
     const video = resultados[0];
-    const respostaImagem = await fetch(video.thumbnails.url);
+    const respostaImagem = await fetch(video.thumbnails[0].url);
     const arrayBuffer = await respostaImagem.arrayBuffer();
     const base64Figurinha = Buffer.from(arrayBuffer).toString('base64');
 
@@ -44,14 +43,29 @@ async function buscarConteudoInternet(termoBusca, tipo) {
 }
 
 // ==========================================
-// MÓDULO DO WHATSAPP
+// MÓDULO DO WHATSAPP (COM CORREÇÃO DO CHROME)
 // ==========================================
 const waClient = new WhatsappClient({
     authStrategy: new LocalAuth(),
-    puppeteer: { args: ['--no-sandbox', '--disable-setuid-sandbox'] } // Obrigatório para rodar em servidores na nuvem
+    puppeteer: {
+        headless: true,
+        args: [
+            '--no-sandbox', 
+            '--disable-setuid-sandbox', 
+            '--disable-extensions',
+            '--disable-dev-shm-usage',
+            '--disable-gpu'
+        ],
+        // Tenta rodar usando o caminho de instalação do comando "npm run build" do Render
+        executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || '/opt/render/.cache/puppeteer/chrome/linux-126.0.6478.126/chrome-linux64/chrome'
+    }
 });
 
-waClient.on('qr', qr => qrcode.generate(qr, { small: true }));
+waClient.on('qr', qr => {
+    // Desenha o QR Code na tela preta do Render
+    qrcode.generate(qr, { small: true });
+});
+
 waClient.on('ready', () => console.log('✅ Bot do WhatsApp Ativo!'));
 
 waClient.on('message', async msg => {
