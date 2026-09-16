@@ -1,4 +1,4 @@
-const wppconnect = require('@wppconnect-team/wppconnect');
+const { Client: WhatsappClient, LocalAuth, MessageMedia } = require('whatsapp-web.js');
 const { Client: DiscordClient, GatewayIntentBits } = require('discord.js');
 const { joinVoiceChannel, createAudioPlayer, createAudioResource, AudioPlayerStatus } = require('@discordjs/voice');
 const qrcode = require('qrcode-terminal');
@@ -7,13 +7,13 @@ const http = require('http');
 
 let bancoDeMemes = {};
 
-// Mantém um servidor web falso rodando pro Render não derrubar o bot gratuito
+// Mantém o projeto do Glitch acordado na internet
 http.createServer((req, res) => {
-    res.write("Bot Online 24h!");
+    res.write("Super Bot Jake Ativo!");
     res.end();
 }).listen(process.env.PORT || 3000);
 
-const SEU_NUMERO_WHATSAPP = "5518996096029"; // Apenas os números para a nova biblioteca
+const SEU_NUMERO_WHATSAPP = "5518996096029@c.us";
 
 async function buscarConteudoInternet(termoBusca, tipo) {
     let sufixo = "meme";
@@ -43,40 +43,31 @@ async function buscarConteudoInternet(termoBusca, tipo) {
 }
 
 // ==========================================
-// MÓDULO DO WHATSAPP (CONEXÃO AUTO-CHROME)
+// MÓDULO DO WHATSAPP (Roda liso no Glitch)
 // ==========================================
-let waClient;
-
-wppconnect.create({
-    session: 'jake-session',
-    catchQR: (base64Qr, asciiQR) => {
-        // Desenha o QR code perfeitamente na tela preta do Render
-        console.log(asciiQR);
-    },
-    puppeteerOptions: {
-        userDataDir: './tokens',
-        args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
+const waClient = new WhatsappClient({
+    authStrategy: new LocalAuth(),
+    puppeteer: {
+        headless: true,
+        args: ['--no-sandbox', '--disable-setuid-sandbox']
     }
-})
-.then((client) => {
-    waClient = client;
-    console.log('✅ Bot do WhatsApp Conectado com Sucesso!');
-    
-    // Escuta as mensagens do WhatsApp
-    client.onMessage(async (msg) => {
-        const texto = msg.body ? msg.body.toLowerCase().trim() : '';
-        
-        if (bancoDeMemes[texto]) {
-            const meme = bancoDeMemes[texto];
-            if (meme.fig) {
-                // Envia a imagem como figurinha nativa
-                await client.sendImageAsStickerBase64(msg.from, `data:image/jpeg;base64,${meme.fig}`);
-            }
-            await client.sendText(msg.from, `📢 *Encontrado:* ${meme.titulo}`);
-        }
-    });
-})
-.catch((error) => console.log('Erro ao iniciar o WhatsApp:', error));
+});
+
+waClient.on('qr', qr => {
+    console.log("👇 ESCANEIE O QR CODE ABAIXO NO SEU WHATSAPP 👇");
+    qrcode.generate(qr, { small: true });
+});
+
+waClient.on('ready', () => console.log('✅ SUCESSO: Bot do WhatsApp conectado e ativo nos grupos!'));
+
+waClient.on('message', async msg => {
+    const texto = msg.body.toLowerCase().trim();
+    if (bancoDeMemes[texto]) {
+        const meme = bancoDeMemes[texto];
+        if (meme.fig) await waClient.sendMessage(msg.from, new MessageMedia('image/jpeg', meme.fig), { sendMediaAsSticker: true });
+        await waClient.sendMessage(msg.from, `📢 *Encontrado:* ${meme.titulo}`);
+    }
+});
 
 // ==========================================
 // MÓDULO DO DISCORD
@@ -90,7 +81,7 @@ const dcClient = new DiscordClient({
     ]
 });
 
-dcClient.on('ready', () => console.log(`✅ Bot do Discord ativo como: ${dcClient.user.tag}`));
+dcClient.on('ready', () => console.log(`✅ SUCESSO: Bot do Discord ativo como: ${dcClient.user.tag}`));
 
 dcClient.on('messageCreate', async msg => {
     if (msg.author.bot) return;
@@ -128,4 +119,5 @@ dcClient.on('messageCreate', async msg => {
     }
 });
 
-dcClient.login('MTU0OTQxODY2OTI4MzQ3NTYwNg.GkjfHS.6pDElykrKm2lxzQGhmFMPtaJnXt0RIe4W2OvAw');
+waClient.initialize();
+dcClient.login('MTU0OTQxODY2OTI4MzQ3NTYwNg.GTNTL9.-bJYKB7gTJnZ3O8vNUWXVlP6EQeCc2QpXytMKg');
